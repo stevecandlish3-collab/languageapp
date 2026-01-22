@@ -1,0 +1,166 @@
+/* =========================
+   Fresh Fox App - Global UI
+   ========================= */
+
+:root{
+  --bg:#000;
+  --card:#0b0b0b;
+  --card2:#111;
+  --text:#fff;
+  --muted:rgba(255,255,255,.75);
+  --muted2:rgba(255,255,255,.55);
+
+  --gold:#ffd700;
+  --gold2:rgba(255,215,0,.35);
+  --gold3:rgba(255,215,0,.10);
+
+  --danger:#ff4d4d;
+  --ok:#00ff95;
+
+  --radius:18px;
+  --radius2:14px;
+}
+
+/* Global reset */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family: Arial, sans-serif;
+}
+
+/* Common wrappers */
+.wrap{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:18px;
+}
+
+.wrapWide{
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+/* Top row layout (map / lesson) */
+.toprow{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+/* Cards */
+.card{
+  background:var(--card);
+  border:1px solid var(--gold2);
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+.pill{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--gold2);
+  background:var(--gold3);
+  font-size:12px;
+  color:var(--text);
+  opacity:.95;
+}
+
+/* Typography helpers */
+.tiny{
+  font-size:12px;
+  opacity:.75;
+  line-height:1.35;
+}
+.meta{
+  font-size:14px;
+  color:var(--muted);
+  line-height:1.35;
+}
+.sound{
+  font-weight:900;
+  letter-spacing:.5px;
+}
+
+/* Buttons */
+button{
+  font-family:inherit;
+}
+button:active{
+  transform: translateY(1px);
+}
+
+.btn,
+#watchBtn{
+  padding:12px 18px;
+  border-radius:12px;
+  border:0;
+  background:var(--gold);
+  color:#000;
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.ghost{
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid var(--gold2);
+  background:#141414;
+  color:var(--text);
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+}
+
+button[disabled]{
+  opacity:.35;
+  cursor:not-allowed;
+}
+
+/* Rows */
+.row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+/* Images & video */
+.mouth{
+  width:72px;
+  height:72px;
+  object-fit:cover;
+  border-radius:14px;
+  background:#111;
+  border:1px solid rgba(255,255,255,.10);
+}
+
+video{
+  width:100%;
+  border-radius:14px;
+  background:#000;
+  border:1px solid rgba(255,255,255,.10);
+}
+
+/* === Index intro overlay helper classes (if used) === */
+#introOverlay{
+  background:#000;
+}
+
+/* Simple fade helpers (optional) */
+.fadeIn{
+  animation: ffFadeIn .6s ease forwards;
+}
+@keyframes ffFadeIn{
+  from{opacity:0; transform:scale(.99);}
+  to{opacity:1; transform:scale(1);}
+}

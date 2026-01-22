@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Intro</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: black;
+    }
+
+    .screen img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 16px;
+    }
+
+    #startScreen {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #startBtn {
+      padding: 16px 26px;
+      font-size: 18px;
+      border-radius: 14px;
+      border: none;
+      background: gold;
+      color: black;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .hint {
+      opacity: 0.8;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- START / USER TAP -->
+<div class="screen" id="startScreen">
+  <div>
+    <h2>Welcome</h2>
+    <p class="hint">Tap to begin</p>
+    <button id="startBtn">Start</button>
+  </div>
+</div>
+
+<!-- SPLASH 1 -->
+<div class="screen" id="splash1">
+  <img src="assets/images/branding/freshfox-logo.png" alt="Fresh Fox Studios">
+</div>
+
+<!-- SPLASH 2 -->
+<div class="screen" id="splash2">
+  <img src="assets/images/branding/language-splash.png" alt="Language – English From the Sound Up">
+</div>
+
+<!-- AUDIO -->
+<audio id="jingle" preload="auto">
+  <source src="assets/audio/jingle.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const startScreen = document.getElementById("startScreen");
+const splash1 = document.getElementById("splash1");
+const splash2 = document.getElementById("splash2");
+const jingle = document.getElementById("jingle");
+
+const SPLASH1_TIME = 10000;
+const SPLASH2_TIME = 10000;
+
+document.getElementById("startBtn").onclick = async () => {
+  try {
+    jingle.currentTime = 0;
+    await jingle.play();
+  } catch(e) {}
+
+  startScreen.style.display = "none";
+  splash1.style.display = "flex";
+
+  setTimeout(() => {
+    splash1.style.display = "none";
+    splash2.style.display = "flex";
+
+    setTimeout(() => {
+      window.location.href = "map.html";
+    }, SPLASH2_TIME);
+
+  }, SPLASH1_TIME);
+};
+</script>
+
+</body>
+</html>

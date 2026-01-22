@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign In / Sign Up</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body{background:#000;color:#fff}
+    .wrap{min-height:100vh;display:grid;place-items:center;padding:18px}
+    .card{width:min(560px,92vw);background:#0b0b0b;border:1px solid rgba(255,215,0,.25);border-radius:18px;padding:16px 16px 18px}
+    .brandImg{width:100%;border-radius:14px;display:block;margin:0 auto 12px}
+    h1{margin:6px 0 2px;font-size:22px}
+    .sub{opacity:.8;font-size:13px;margin:0 0 14px}
+    label{display:block;text-align:left;margin:12px 0 6px;font-weight:800;font-size:13px}
+    input{
+      width:100%;padding:12px 14px;border-radius:12px;
+      border:1px solid rgba(255,215,0,.35);background:#050505;color:#fff;font-size:16px;outline:none;
+    }
+    input:focus{border-color:rgba(255,215,0,.85)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+    .btn{
+      padding:12px 18px;border-radius:12px;border:0;background:gold;color:#000;font-weight:900;font-size:16px;
+      min-width:160px;cursor:pointer;
+    }
+    .btn.ghost{background:#141414;color:#fff;border:1px solid rgba(255,215,0,.35)}
+    .tiny{font-size:12px;opacity:.75;margin-top:10px;line-height:1.35}
+    .msg{margin-top:12px;color:#ffd700;font-weight:900;min-height:22px}
+    .checkRow{display:flex;gap:10px;align-items:center;justify-content:flex-start;margin-top:12px}
+    .checkRow input{width:auto;transform:scale(1.15);margin:0}
+    .divider{height:1px;background:rgba(255,215,0,.18);margin:14px 0}
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+    <img class="brandImg" src="assets/images/branding/language-splash.png" alt="Language – English From the Sound Up">
+
+    <h1>Sign In / Sign Up</h1>
+    <p class="sub">Create your account once. Next time, sign in like any normal app. After you click Sign In/Up, the jingle + splash screens play, then you go to the map.</p>
+
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@email.com">
+
+    <label for="pass">Password</label>
+    <input id="pass" type="password" autocomplete="current-password" placeholder="Create or enter password">
+
+    <div class="checkRow">
+      <input id="remember" type="checkbox">
+      <div style="font-size:12px;opacity:.85;">Remember me on this device</div>
+    </div>
+
+    <div class="checkRow">
+      <input id="optin" type="checkbox">
+      <div style="font-size:12px;opacity:.85;">Email me about new Fresh Fox products & promotions</div>
+    </div>
+
+    <div class="row">
+      <button class="btn" id="signupBtn" type="button">Sign Up</button>
+      <button class="btn ghost" id="signinBtn" type="button">Sign In</button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <div class="divider"></div>
+
+    <div class="tiny">
+      <b>How it saves:</b> accounts are stored on your device (local storage). Your phone/browser can also offer to save the password like normal.
+      Later you can upgrade to server accounts if you want.
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== SETTINGS =====
+  const ADMIN_EMAIL = "stevecandlish3@gmail.com";
+
+  // ===== ELEMENTS =====
+  const emailEl = document.getElementById("email");
+  const passEl  = document.getElementById("pass");
+  const rememberEl = document.getElementById("remember");
+  const optinEl = document.getElementById("optin");
+  const msgEl = document.getElementById("msg");
+
+  // Prefill remembered user
+  const remembered = (localStorage.getItem("ff_user_email") || "").trim().toLowerCase();
+  if(localStorage.getItem("ff_remember")==="1" && remembered){
+    emailEl.value = remembered;
+    rememberEl.checked = true;
+  }
+
+  // Auto-skip signup if user is already signed in and remembered
+  // (Feels more like a real app)
+  if(localStorage.getItem("ff_remember")==="1" && remembered){
+    // If they already have a stored account, go straight to intro+map
+    try{
+      if(window.parent && typeof window.parent.startIntroAndGoToMap === "function"){
+        window.parent.startIntroAndGoToMap();
+      } else {
+        window.location.href = "map.html";
+      }
+    }catch(e){
+      window.location.href = "map.html";
+    }
+  }
+
+  function validEmail(v){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  }
+
+  async function sha256(text){
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+  }
+
+  function getUsers(){
+    try { return JSON.parse(localStorage.getItem("ff_users") || "{}"); }
+    catch(e){ return {}; }
+  }
+  function setUsers(u){
+    localStorage.setItem("ff_users", JSON.stringify(u));
+  }
+
+  function addToMarketing(email){
+    try{
+      const raw = localStorage.getItem("ff_marketing_list");
+      const list = raw ? JSON.parse(raw) : [];
+      if(!list.includes(email)) list.push(email);
+      localStorage.setItem("ff_marketing_list", JSON.stringify(list));
+    }catch(e){}
+  }
+
+  function setSession(email){
+    localStorage.setItem("ff_user_email", email);
+
+    // Admin flag
+    localStorage.setItem("ff_is_admin", (email === ADMIN_EMAIL) ? "1" : "0");
+
+    if(rememberEl.checked){
+      localStorage.setItem("ff_remember", "1");
+    } else {
+      localStorage.setItem("ff_remember", "0");
+    }
+
+    localStorage.setItem("ff_email_opt_in", optinEl.checked ? "1" : "0");
+    if(optinEl.checked) addToMarketing(email);
+  }
+
+  function goIntoIntroSequence(){
+    try{
+      if(window.parent && typeof window.parent.startIntroAndGoToMap === "function"){
+        window.parent.startIntroAndGoToMap();
+        return;
+      }
+    }catch(e){}
+    window.location.href = "map.html";
+  }
+
+  async function doSignup(){
+    const email = (emailEl.value||"").trim().toLowerCase();
+    const pass  = (passEl.value||"").trim();
+
+    if(!validEmail(email)){ msgEl.textContent = "Enter a valid email."; return; }
+    if(pass.length < 4){ msgEl.textContent = "Password must be at least 4 characters."; return; }
+
+    const users = getUsers();
+    if(users[email]){
+      msgEl.textContent = "Account exists. Use Sign In.";
+      return;
+    }
+
+    users[email] = { hash: await sha256(pass), createdAt: Date.now() };
+    setUsers(users);
+    setSession(email);
+
+    msgEl.textContent = "Account created. Starting…";
+    goIntoIntroSequence();
+  }
+
+  async function doSignin(){
+    const email = (emailEl.value||"").trim().toLowerCase();
+    const pass  = (passEl.value||"").trim();
+
+    if(!validEmail(email)){ msgEl.textContent = "Enter a valid email."; return; }
+    if(!pass){ msgEl.textContent = "Enter your password."; return; }
+
+    const users = getUsers();
+    if(!users[email]){
+      msgEl.textContent = "No account found. Use Sign Up first.";
+      return;
+    }
+
+    const h = await sha256(pass);
+    if(users[email].hash !== h){
+      msgEl.textContent = "Wrong password.";
+      return;
+    }
+
+    setSession(email);
+    msgEl.textContent = "Signed in. Starting…";
+    goIntoIntroSequence();
+  }
+
+  document.getElementById("signupBtn").addEventListener("click", doSignup);
+  document.getElementById("signinBtn").addEventListener("click", doSignin);
+</script>
+
+</body>
+</html>

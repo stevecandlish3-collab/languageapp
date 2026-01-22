@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Lesson Map</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { margin:0; background:#000; color:#fff; font-family: Arial, sans-serif; }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 18px; }
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+    h1 { margin: 8px 0 6px; }
+    .pill {
+      display:inline-block; padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,215,0,.35); background:rgba(255,215,0,.07);
+      font-size:12px; opacity:.9;
+    }
+    .tiny { font-size:12px; opacity:.75; line-height:1.35; }
+
+    .grid { display:grid; grid-template-columns: 1fr; gap: 12px; margin-top:14px; }
+
+    .card {
+      display:flex; align-items:center; gap: 12px;
+      padding: 12px; border: 1px solid rgba(255,215,0,.35);
+      border-radius: 14px; background: rgba(255,215,0,.06);
+    }
+    .mouth { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; background:#111; }
+    .info { flex:1; text-align:left; }
+    .sound { font-size: 20px; font-weight: 900; letter-spacing: .5px; }
+    .sub { opacity:.8; font-size: 14px; margin-top: 2px; }
+    .btnRow { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .btn {
+      padding: 10px 14px; border-radius: 12px; border: 0;
+      font-weight: 900; background: gold; color: #000; cursor:pointer;
+    }
+    .btn.ghost{
+      background:#141414; color:#fff;
+      border:1px solid rgba(255,215,0,.35);
+    }
+    .btn[disabled] { opacity: .35; background: #666; color:#111; cursor:not-allowed; }
+    .lock { font-size: 13px; opacity:.75; margin-left: 6px; font-weight:700; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Lesson Map</h1>
+        <div class="pill" id="userPill">Signed in: …</div>
+        <div class="tiny" style="margin-top:6px;">
+          Rule: You need at least <b>★☆☆</b> on a sound to unlock the next one.
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btn ghost" id="adminBtn" type="button" style="display:none;">Admin</button>
+        <button class="btn ghost" id="signOutBtn" type="button">Sign Out</button>
+      </div>
+    </div>
+
+    <div id="list" class="grid"></div>
+  </div>
+
+<script>
+  // Sounds you currently have
+  const SOUNDS = ["ah","oh","ee","ll","mm","nn","ff","ss","tt","dd","bb"];
+
+  // ===== LOGIN GUARD =====
+  const email = (localStorage.getItem("ff_user_email") || "").trim().toLowerCase();
+  if(!email){
+    location.href = "signup.html";
+  }
+  document.getElementById("userPill").textContent = "Signed in: " + email;
+
+  // Admin button only if you
+  const isAdmin = localStorage.getItem("ff_is_admin") === "1";
+  const adminBtn = document.getElementById("adminBtn");
+  if(isAdmin){
+    adminBtn.style.display = "inline-block";
+    adminBtn.onclick = () => alert("Admin page comes later.");
+  }
+
+  // Sign out
+  document.getElementById("signOutBtn").onclick = () => {
+    localStorage.removeItem("ff_user_email");
+    localStorage.removeItem("ff_is_admin");
+    location.href = "signup.html";
+  };
+
+  // ===== PROGRESS (MUST MATCH lesson.html) =====
+  function getProgress(){
+    try { return JSON.parse(localStorage.getItem("ff_progress") || "{}"); }
+    catch(e){ return {}; }
+  }
+  function setProgress(p){
+    localStorage.setItem("ff_progress", JSON.stringify(p));
+  }
+
+  function starsText(n){
+    n = Math.max(0, Math.min(3, n|0));
+    return "★".repeat(n) + "☆".repeat(3-n);
+  }
+
+  function isUnlocked(index, progress){
+    if(index === 0) return true;
+    const prevSound = SOUNDS[index - 1];
+    const prevStars = progress[prevSound]?.stars || 0;
+    return prevStars >= 1;
+  }
+
+  const progress = getProgress();
+  // Ensure first sound has an entry (optional)
+  if(!progress["ah"]) {
+    progress["ah"] = { stars: 0 };
+    setProgress(progress);
+  }
+
+  // ===== RENDER =====
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  SOUNDS.forEach((s, i) => {
+    const unlocked = isUnlocked(i, progress);
+    const stars = progress[s]?.stars || 0;
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const img = document.createElement("img");
+    img.className = "mouth";
+    img.src = `assets/mouth/${s}.png`;
+    img.alt = `${s} mouth`;
+    img.onerror = () => { img.style.display = "none"; };
+
+    const info = document.createElement("div");
+    info.className = "info";
+    info.innerHTML = `
+      <div class="sound">
+        ${s.toUpperCase()}
+        <span class="lock">${unlocked ? "" : "🔒 Locked"}</span>
+      </div>
+      <div class="sub">Stars: ${starsText(stars)}</div>
+    `;
+
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.textContent = unlocked ? "Start" : "Locked";
+    btn.disabled = !unlocked;
+    btn.onclick = () => {
+      location.href = `lesson.html?sound=${encodeURIComponent(s)}`;
+    };
+
+    card.appendChild(img);
+    card.appendChild(info);
+    card.appendChild(btn);
+    list.appendChild(card);
+  });
+</script>
+
+</body>
+</html>

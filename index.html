@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fresh Fox</title>
+
+  <style>
+    body{margin:0;background:#000;font-family:Arial,sans-serif}
+    /* App frame */
+    #appFrame{width:100%;height:100vh;border:0;display:block}
+
+    /* Intro overlay */
+    #introOverlay{
+      position:fixed;inset:0;background:#000;z-index:9999;
+      display:none;align-items:center;justify-content:center;
+      overflow:hidden;
+    }
+    .introInner{
+      width:100%;height:100%;
+      display:flex;align-items:center;justify-content:center;
+      position:relative;
+    }
+    .introImg{
+      max-width:90vw;max-height:90vh;border-radius:18px;
+      opacity:0;transform:scale(0.985);
+      transition:opacity 700ms ease, transform 700ms ease;
+      display:block;
+    }
+    .show .introImg{opacity:1;transform:scale(1)}
+    .fadeOut .introImg{opacity:0;transform:scale(0.985)}
+
+    /* Top-right controls (only during intro) */
+    .introControls{
+      position:absolute;top:14px;right:14px;
+      display:flex;gap:10px;z-index:10000;
+    }
+    .ctrlBtn{
+      padding:10px 14px;border-radius:12px;border:1px solid rgba(255,215,0,.35);
+      background:rgba(0,0,0,.5);color:#fff;font-weight:900;
+      cursor:pointer;
+    }
+
+    /* Small helper text on first frame (optional) */
+    .tapHint{
+      position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+      color:#ffd700;font-weight:900;letter-spacing:.2px;
+      background:rgba(0,0,0,.55);border:1px solid rgba(255,215,0,.25);
+      padding:10px 14px;border-radius:14px;
+      opacity:.9;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Main App (always loads signup first) -->
+<iframe
+  id="appFrame"
+  src="signup.html"
+  allow="microphone; camera; autoplay"
+  title="Fresh Fox App"
+></iframe>
+
+<!-- Intro Overlay (FreshFox splash -> Language splash) -->
+<div id="introOverlay">
+  <div class="introInner" id="introInner">
+    <div class="introControls">
+      <button class="ctrlBtn" id="muteBtn" type="button">Mute</button>
+      <button class="ctrlBtn" id="skipBtn" type="button">Skip</button>
+    </div>
+
+    <img id="introImg" class="introImg" src="" alt="Intro">
+
+    <div class="tapHint" id="tapHint" style="display:none;">
+      Intro playing… (Skip if you want)
+    </div>
+  </div>
+</div>
+
+<!-- Jingle lives here so it doesn’t die during transitions -->
+<audio id="jingle" preload="auto" playsinline>
+  <source src="assets/audio/jingle.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+(() => {
+  // ===== SETTINGS =====
+  const FRESHFOX_TIME = 10000;
+  const LANGUAGE_TIME = 10000;
+
+  const PATHS = {
+    freshfoxImg: "assets/images/branding/freshfox-logo.png",
+    languageImg: "assets/images/branding/language-splash.png",
+    mapPage: "map.html",
+    signupPage: "signup.html"
+  };
+
+  // ===== ELEMENTS =====
+  const appFrame = document.getElementById("appFrame");
+  const overlay = document.getElementById("introOverlay");
+  const inner = document.getElementById("introInner");
+  const img = document.getElementById("introImg");
+  const jingle = document.getElementById("jingle");
+  const muteBtn = document.getElementById("muteBtn");
+  const skipBtn = document.getElementById("skipBtn");
+  const tapHint = document.getElementById("tapHint");
+
+  let timers = [];
+  let introRunning = false;
+
+  function clearAllTimers(){
+    timers.forEach(t => clearTimeout(t));
+    timers = [];
+  }
+
+  function setIntroPlayedFlag(){
+    localStorage.setItem("ff_intro_played", "1");
+  }
+
+  function hasIntroPlayed(){
+    return localStorage.getItem("ff_intro_played") === "1";
+  }
+
+  function showOverlay(){
+    overlay.style.display = "flex";
+    tapHint.style.display = "block";
+  }
+  function hideOverlay(){
+    overlay.style.display = "none";
+    tapHint.style.display = "none";
+  }
+
+  function fadeInImage(src){
+    img.src = src;
+    inner.classList.remove("fadeOut");
+    // force reflow so animation triggers reliably
+    void img.offsetWidth;
+    inner.classList.add("show");
+  }
+
+  function fadeOutImage(){
+    inner.classList.add("fadeOut");
+    inner.classList.remove("show");
+  }
+
+  function stopMusic(){
+    try{
+      jingle.pause();
+      jingle.currentTime = 0;
+      jingle.muted = false;
+      muteBtn.textContent = "Mute";
+    }catch(e){}
+  }
+
+  function goToMapAndStopMusic(){
+    // Show map inside the iframe
+    appFrame.src = PATHS.mapPage;
+    // Stop music as soon as map loads
+    appFrame.onload = () => {
+      stopMusic();
+      // clean onload so it doesn't fire again later
+      appFrame.onload = null;
+    };
+    hideOverlay();
+    introRunning = false;
+  }
+
+  // ===== PUBLIC FUNCTION (called by signup.html) =====
+  window.startIntroAndGoToMap = async function(){
+    // If intro already played once, go straight to map (no splashes, no music)
+    if(hasIntroPlayed()){
+      appFrame.src = PATHS.mapPage;
+      stopMusic();
+      return;
+    }
+
+    // Prevent double-runs
+    if(introRunning) return;
+    introRunning = true;
+
+    // Start jingle (user clicked Sign In/Up in signup.html so this is allowed)
+    try{
+      jingle.currentTime = 0;
+      jingle.volume = 1;
+      jingle.muted = false;
+      await jingle.play();
+    }catch(e){
+      // If a browser blocks, intro still runs visually; user can unmute/skip
+    }
+
+    // Hide whatever is in iframe while intro shows
+    showOverlay();
+    fadeInImage(PATHS.freshfoxImg);
+
+    clearAllTimers();
+
+    // After 10s: fade out then switch
+    timers.push(setTimeout(() => {
+      fadeOutImage();
+
+      timers.push(setTimeout(() => {
+        fadeInImage(PATHS.languageImg);
+
+        // After language time: go to map and stop music
+        timers.push(setTimeout(() => {
+          setIntroPlayedFlag();
+          goToMapAndStopMusic();
+        }, LANGUAGE_TIME));
+
+      }, 450)); // small gap between fade out/in
+
+    }, FRESHFOX_TIME));
+  };
+
+  // ===== INTRO CONTROLS =====
+  muteBtn.addEventListener("click", () => {
+    try{
+      jingle.muted = !jingle.muted;
+      muteBtn.textContent = jingle.muted ? "Unmute" : "Mute";
+    }catch(e){}
+  });
+
+  skipBtn.addEventListener("click", () => {
+    // Mark intro as played so it won't run next time
+    setIntroPlayedFlag();
+    clearAllTimers();
+    goToMapAndStopMusic();
+  });
+
+})();
+</script>
+
+</body>
+</html>
