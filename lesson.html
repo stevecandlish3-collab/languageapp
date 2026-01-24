@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lesson</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, Arial, sans-serif;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .card {
+      background: #0b0b0b;
+      border: 1px solid rgba(255,215,0,.25);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button {
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .gold { background: gold; color: #000; }
+    .dark { background: #111; color: #fff; border: 1px solid rgba(255,215,0,.3); }
+    img {
+      width: 90px;
+      height: 90px;
+      border-radius: 12px;
+      background: #111;
+    }
+    iframe {
+      width: 100%;
+      aspect-ratio: 16/9;
+      border: none;
+      border-radius: 12px;
+      background: #000;
+    }
+    .tiny { font-size: 13px; opacity: .8; text-align: center; }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <div style="font-size:22px;font-weight:900" id="title">Lesson</div>
+      <div class="tiny">Watch the video first, then rate yourself.</div>
+    </div>
+    <button class="dark" onclick="location.href='map.html'">Back</button>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <img id="mouthImg">
+      <div>
+        <div id="soundLabel" style="font-size:20px;font-weight:900"></div>
+        <div id="status" class="tiny">Tap Watch Video to begin.</div>
+        <div class="tiny">Stars: <span id="stars">☆☆☆</span></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="watchBtn" class="gold">Watch Video</button>
+      <a id="openVideo" class="dark" target="_blank">Open Fullscreen</a>
+    </div>
+
+    <div id="videoBox" style="display:none;margin-top:12px;"></div>
+
+    <div class="row">
+      <button class="dark" onclick="rate(0)">0 ⭐ Try Again</button>
+      <button class="dark" onclick="rate(1)">1 ⭐ Good</button>
+      <button class="dark" onclick="rate(2)">2 ⭐ Great</button>
+      <button class="dark" onclick="rate(3)">3 ⭐ Excellent</button>
+    </div>
+  </div>
+</div>
+
+<audio id="instruction" src="assets/audio/watch-first.mp3" preload="auto"></audio>
+
+<script>
+const CLOUD = "dqdykulsn";
+const VIDEOS = {
+  ah: "ah_brxui8",
+  ee: "ee_bx4kvr",
+  ll: "ll_nzkvuu",
+  mm: "mm_ihfpjw",
+  nn: "nn_lnt57i",
+  ff: "ff_rdft0n",
+  ss: "ss_gbpit8",
+  tt: "tt_y4cryv",
+  dd: "dd_m68c49",
+  bb: "bb_axhh1d",
+  oh: "oh_u3nk9d"
+};
+
+const params = new URLSearchParams(location.search);
+const sound = params.get("sound") || "ah";
+
+document.getElementById("title").textContent = "Lesson: " + sound.toUpperCase();
+document.getElementById("soundLabel").textContent = "Sound: " + sound.toUpperCase();
+document.getElementById("mouthImg").src = "assets/" + sound + ".png";
+
+const videoId = VIDEOS[sound];
+const videoURL = `https://player.cloudinary.com/embed/?cloud_name=${CLOUD}&public_id=${videoId}`;
+
+document.getElementById("openVideo").href = videoURL;
+
+let watched = false;
+
+document.getElementById("watchBtn").onclick = () => {
+  document.getElementById("videoBox").innerHTML =
+    `<iframe src="${videoURL}&autoplay=true" allow="autoplay; fullscreen"></iframe>`;
+  document.getElementById("videoBox").style.display = "block";
+  document.getElementById("status").textContent = "Watch the video, then choose stars.";
+  watched = true;
+};
+
+function rate(stars) {
+  if (!watched) {
+    document.getElementById("instruction").play();
+    document.getElementById("status").textContent = "Watch the video first.";
+    return;
+  }
+  localStorage.setItem("lesson_" + sound, stars);
+  document.getElementById("stars").textContent =
+    "⭐".repeat(stars) + "☆".repeat(3 - stars);
+  document.getElementById("status").textContent = "Saved.";
+}
+
+// play instruction once
+document.getElementById("instruction").play().catch(()=>{});
+</script>
+</body>
+</html>
